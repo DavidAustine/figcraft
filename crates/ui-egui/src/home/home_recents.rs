@@ -585,6 +585,15 @@ enum Action {
 /// case, from the Home search) only the files not open whose path has it, from every recent file;
 /// nothing at all when none has it. How many files are shown.
 pub fn section(app: &mut FigApp, ui: &mut Ui, t: &Tokens, query: &str) -> usize {
+    section_filtered(app, ui, t, query, None)
+}
+
+/// The recent Moodboard files, using the same cards, sorting and preview loading as Recents.
+pub fn moodboards_section(app: &mut FigApp, ui: &mut Ui, t: &Tokens, query: &str) -> usize {
+    section_filtered(app, ui, t, query, Some(figcraft_doc::FileKind::Moodboard))
+}
+
+fn section_filtered(app: &mut FigApp, ui: &mut Ui, t: &Tokens, query: &str, kind: Option<figcraft_doc::FileKind>) -> usize {
     let searching = !query.is_empty();
     // A search reaches every recent file; the files shown without one stay known through it.
     let paths: Vec<String> = listed(&app.session.prefs.recent_files).take(if searching { usize::MAX } else { SHOWN }).cloned().collect();
@@ -595,6 +604,9 @@ pub fn section(app: &mut FigApp, ui: &mut Ui, t: &Tokens, query: &str) -> usize 
     let state = &mut app.ui.home_view.recents;
     state.refresh(ui.ctx(), &paths, time);
     let mut files = sorted(state.shown(&paths), sort);
+    if let Some(kind) = kind {
+        files.retain(|file| file.kind == kind);
+    }
     if searching {
         let docs = &app.session.docs;
         files.retain(|f| f.path.to_lowercase().contains(query) && !docs.iter().any(|d| d.path.as_deref() == Some(f.path.as_str())));

@@ -63,21 +63,26 @@ fn templates_tab(u: &mut Ui) -> Vec<Shape> {
 }
 
 #[test]
-fn the_sidebar_has_recents_online_and_templates_and_no_placeholders() {
+fn the_sidebar_has_recents_moodboards_online_and_templates_and_no_placeholders() {
     let mut u = first_run();
     let s = shapes(&mut u);
-    assert!(has_text(&s, "Recents") && has_text(&s, "Online") && has_text(&s, "Templates"));
+    assert!(has_text(&s, "Recents") && has_text(&s, "Moodboards") && has_text(&s, "Online") && has_text(&s, "Templates"));
     assert!(!has_text(&s, "Drafts") && !has_text(&s, "Community"));
     u.ctx.enable_accesskit();
     u.frame(vec![]);
     let nodes: Vec<_> = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes.into_iter().map(|(_, n)| n).collect();
     let tab = |label: &str| nodes.iter().find(|n| n.role() == Role::Tab && n.label() == Some(label)).unwrap_or_else(|| panic!("no tab {label}"));
-    assert_eq!((tab("Recents").is_selected(), tab("Online").is_selected(), tab("Templates").is_selected()), (Some(true), Some(false), Some(false)));
-    // In reading order: Recents, Online, Templates.
+    assert_eq!(
+        (tab("Recents").is_selected(), tab("Moodboards").is_selected(), tab("Online").is_selected(), tab("Templates").is_selected()),
+        (Some(true), Some(false), Some(false), Some(false)),
+    );
+    // In reading order: Recents, Moodboards, Online, Templates.
     let top = |label: &str| tab(label).bounds().unwrap().y0;
-    assert!(top("Recents") < top("Online") && top("Online") < top("Templates"));
+    assert!(top("Recents") < top("Moodboards") && top("Moodboards") < top("Online") && top("Online") < top("Templates"));
     // Each is clicked into, and `ui.inspect` and `ui.set {homeSection}` name them the same way.
-    for (label, section) in [("Online", Section::Online), ("Templates", Section::Templates), ("Recents", Section::Recents)] {
+    for (label, section) in
+        [("Moodboards", Section::Moodboards), ("Online", Section::Online), ("Templates", Section::Templates), ("Recents", Section::Recents)]
+    {
         let s = shapes(&mut u);
         click(&mut u, text_center(&s, label));
         assert_eq!(u.app.ui.home_view.section, section);
@@ -87,10 +92,32 @@ fn the_sidebar_has_recents_online_and_templates_and_no_placeholders() {
         assert_eq!(Section::parse(section.id()), Some(section));
     }
     assert_eq!(Section::parse("drafts"), None);
+    assert_eq!(Section::parse("moodboards"), Some(Section::Moodboards));
     // The Online section is the online files' own.
     u.app.ui.home_view.section = Section::Online;
     let s = settle(&mut u);
     assert!(has_text(&s, "Online files") && !has_text(&s, "Getting started") && !has_text(&s, "Start from a template"));
+}
+
+#[test]
+fn the_moodboards_section_can_create_a_moodboard() {
+    let mut u = first_run();
+    let s = shapes(&mut u);
+    click(&mut u, text_center(&s, "Moodboards"));
+    let s = shapes(&mut u);
+    assert!(has_text(&s, "Collect images, videos, links and notes in a visual workspace."));
+    click(&mut u, text_center(&s, "Create moodboard"));
+    assert_eq!(u.app.session.doc().unwrap().kind, figcraft_doc::FileKind::Moodboard);
+    assert!(!u.app.ui.home);
+}
+
+#[test]
+fn the_actions_palette_offers_new_moodboard_from_the_toolbar_action() {
+    let rows = crate::menus::command_sections("moodboard");
+    assert!(rows.iter().flat_map(|(_, rows)| rows).any(|row| row.key == "command:file.newMoodboard"));
+    let mut u = first_run();
+    crate::menus::run_action(&mut u.app, "command:file.newMoodboard");
+    assert_eq!(u.app.session.doc().unwrap().kind, figcraft_doc::FileKind::Moodboard);
 }
 
 #[test]

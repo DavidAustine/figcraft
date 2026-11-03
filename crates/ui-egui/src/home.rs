@@ -23,14 +23,16 @@ pub mod online;
 pub enum Section {
     #[default]
     Recents,
+    Moodboards,
     Online,
     Templates,
 }
 
 impl Section {
     /// The sidebar, top to bottom.
-    const ALL: [(Section, Icon, &str); 3] = [
+    const ALL: [(Section, Icon, &str); 4] = [
         (Section::Recents, Icon::Home, tr_noop("Recents")),
+        (Section::Moodboards, Icon::Image, tr_noop("Moodboards")),
         (Section::Online, Icon::Online, tr_noop("Online")),
         (Section::Templates, Icon::Assets, tr_noop("Templates")),
     ];
@@ -39,6 +41,7 @@ impl Section {
     pub fn id(self) -> &'static str {
         match self {
             Section::Recents => "recents",
+            Section::Moodboards => "moodboards",
             Section::Online => "online",
             Section::Templates => "templates",
         }
@@ -162,6 +165,7 @@ pub fn show(app: &mut FigApp, ui: &mut Ui) {
                     if app.ui.home_view.file_query.trim().is_empty() {
                         match app.ui.home_view.section {
                             Section::Templates => templates(app, ui, &t),
+                            Section::Moodboards => moodboards(app, ui, &t),
                             _ => recents(app, ui, &t),
                         }
                     } else {
@@ -326,6 +330,19 @@ fn action_card(ui: &mut Ui, t: &Tokens, icon: Icon, title: &str, sub: &str) -> b
     ui.painter().text(pos2(r.min.x + 60.0, r.center().y - 8.0), Align2::LEFT_CENTER, title_shown, semibold(12.0), t.text);
     ui.painter().text(pos2(r.min.x + 60.0, r.center().y + 9.0), Align2::LEFT_CENTER, sub_shown, regular(11.0), t.text_secondary);
     resp.clicked()
+}
+
+fn moodboards(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
+    heading(ui, t, tr("Moodboards"));
+    if crate::home_recents::moodboards_section(app, ui, t, "") == 0 {
+        ui.add_space(12.0);
+        widgets::label(ui, tr("Collect images, videos, links and notes in a visual workspace."), t.text_secondary);
+        ui.add_space(16.0);
+        if widgets::button(ui, tr("Create moodboard"), false, true).clicked() {
+            app.run("file.newMoodboard", json!({}));
+            app.ui.home = false;
+        }
+    }
 }
 
 fn recents(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {

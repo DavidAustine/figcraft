@@ -315,6 +315,7 @@ pub fn file_mark(kind: figcraft_doc::FileKind) -> Icon {
     match kind {
         figcraft_doc::FileKind::Design => Icon::PenNib,
         figcraft_doc::FileKind::Board => Icon::Board,
+        figcraft_doc::FileKind::Moodboard => Icon::Image,
     }
 }
 

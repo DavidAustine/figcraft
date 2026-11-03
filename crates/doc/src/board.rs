@@ -12,13 +12,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::NodeId;
 
-/// What a file is for: designing screens, or a board to think together on.
+/// What a file is for: designing screens, a collaborative board, or a visual moodboard.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FileKind {
     #[default]
     Design,
     Board,
+    Moodboard,
 }
 
 impl FileKind {
@@ -29,6 +30,7 @@ impl FileKind {
         match self {
             FileKind::Design => "design",
             FileKind::Board => "board",
+            FileKind::Moodboard => "moodboard",
         }
     }
 }

@@ -216,10 +216,10 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 pub fn is_board(doc: &Document) -> bool {
-    doc.kind == FileKind::Board
+    matches!(doc.kind, FileKind::Board | FileKind::Moodboard)
 }
 
-/// Refuse `cmd` unless the active file is a board.
+/// Refuse `cmd` unless the active file uses the board canvas infrastructure.
 pub(crate) fn require(s: &Session, cmd: &str) -> Result<()> {
     if s.doc().is_ok_and(is_board) { Ok(()) } else { Err(EngineError::Disabled(cmd.into(), NEEDS_BOARD.into())) }
 }
@@ -229,7 +229,7 @@ fn design_only(cmd: &str) -> bool {
     cmd.starts_with("proto.") || cmd.starts_with("dev.") || matches!(cmd, "view.prototype" | "view.designPrototype" | "view.devMode")
 }
 
-/// Refuse `cmd` on a board when it is prototyping or Dev Mode.
+/// Refuse `cmd` on a board-style workspace when it is prototyping or Dev Mode.
 pub(crate) fn refuse_on_board(s: &Session, cmd: &str) -> Result<()> {
     if design_only(cmd) && s.doc().is_ok_and(is_board) { Err(EngineError::Disabled(cmd.into(), NOT_ON_BOARDS.into())) } else { Ok(()) }
 }

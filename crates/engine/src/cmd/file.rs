@@ -47,12 +47,19 @@ use version::{autosave, restore_version, save_version, version_index, version_js
 
 /// A new file of `kind` in a tab of its own.
 fn new_file(s: &mut Session, p: &Value, kind: FileKind) -> Result<Value> {
-    let name = string(p, "name").unwrap_or_else(|| if kind == FileKind::Board { "Untitled board" } else { "Untitled" }.into());
+    let name = string(p, "name").unwrap_or_else(|| {
+        match kind {
+            FileKind::Design => "Untitled",
+            FileKind::Board => "Untitled board",
+            FileKind::Moodboard => "Untitled moodboard",
+        }
+        .into()
+    });
     let mut doc = Document::new(name);
     doc.kind = kind;
     // A property of the page from here on: a later change of theme leaves it alone. Boards are
     // light whatever the theme.
-    let background = if kind == FileKind::Board { BOARD_PAGE } else { s.new_page_background() };
+    let background = if matches!(kind, FileKind::Board | FileKind::Moodboard) { BOARD_PAGE } else { s.new_page_background() };
     for page in doc.pages.clone() {
         if let Some(NodeKind::Page { background: b, .. }) = doc.node_mut(page).map(|n| &mut n.kind) {
             *b = background;
@@ -73,6 +80,9 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             |s, p| new_file(s, p, FileKind::Board)
         ),
+        spec!("file.newMoodboard", "New moodboard", "{name?}  a visual workspace for collecting and arranging creative references", false, |s, p| {
+            new_file(s, p, FileKind::Moodboard)
+        }),
         spec!(
             "file.open",
             "Open",

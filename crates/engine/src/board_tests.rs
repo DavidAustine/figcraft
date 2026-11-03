@@ -63,6 +63,25 @@ fn a_board_is_a_kind_of_file_that_saves_and_reopens() {
 }
 
 #[test]
+fn a_moodboard_is_a_distinct_saved_file_using_the_board_canvas_foundation() {
+    let mut s = Session::new();
+    let created = s.execute("file.newMoodboard", &json!({})).unwrap();
+    let doc = s.doc().unwrap();
+    assert_eq!(doc.kind, FileKind::Moodboard);
+    assert_eq!(doc.name, "Untitled moodboard");
+    assert!(matches!(doc.node(doc.pages[0]).unwrap().kind, NodeKind::Page { background, .. } if background == BOARD_PAGE));
+    assert!(crate::board::is_board(doc), "moodboards use the board canvas foundation");
+    assert_eq!(created["kind"], "moodboard");
+    let (back, _) = figcraft_format::from_json(&figcraft_format::to_json(doc).unwrap().to_string()).unwrap();
+    assert_eq!(back.kind, FileKind::Moodboard);
+    assert_eq!(crate::inspect::document(&s, 0, false)["kind"], "moodboard");
+
+    // The existing board command foundation is available without changing the document's kind.
+    s.execute("board.sticky", &json!({"x": 20, "y": 30, "text": "Reference"})).unwrap();
+    assert_eq!(s.doc().unwrap().kind, FileKind::Moodboard);
+}
+
+#[test]
 fn board_commands_refuse_on_design_files_and_prototyping_refuses_on_boards() {
     let mut d = Session::new();
     d.execute("file.new", &json!({})).unwrap();
